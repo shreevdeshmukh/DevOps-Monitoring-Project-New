@@ -73,25 +73,25 @@ pipeline {
 
         // STAGE 3: BUILD DOCKER IMAGE
 
-        stage('3. Build Docker Image') {
-            steps {
-                script {
-                    env.IMAGE_NAME = env.DOCKERHUB_REPO
-                    env.IMAGE_TAG = "${env.BUILD_NUMBER}"
+      stage('3. Build Docker Image') {
+    steps {
+        script {
+            env.IMAGE_NAME = 'ninande/my-web-app-new-mon'
+            env.IMAGE_TAG = "${env.BUILD_NUMBER}"
 
-                    echo "Building ${env.IMAGE_NAME}:${env.IMAGE_TAG}"
+            echo "Building Docker Image: ${env.IMAGE_NAME}:${env.IMAGE_TAG}"
 
-                    sh '''
-                        set -eu
+            sh """
+                set -eu
 
-                        docker build \
-                            -t "${IMAGE_NAME}:${IMAGE_TAG}" \
-                            -t "${IMAGE_NAME}:latest" \
-                            .
-                    '''
-                }
-            }
+                docker build \
+                  -t ${env.IMAGE_NAME}:${env.IMAGE_TAG} \
+                  -t ${env.IMAGE_NAME}:latest \
+                  .
+            """
         }
+    }
+}
 
         // STAGE 4: PUSH IMAGE TO DOCKER HUB
 
