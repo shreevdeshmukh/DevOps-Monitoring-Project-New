@@ -257,7 +257,7 @@ stage('7. Verify Deployment') {
         }
     }
 }
-
+}
    // POST BUILD ACTIONS
 
     post {
@@ -307,4 +307,4 @@ ${env.BUILD_URL}console
         }
     }
 }
-}
+
