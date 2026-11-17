@@ -73,17 +73,21 @@ pipeline {
 
         // STAGE 3: BUILD DOCKER IMAGE
 
-      stage('3. Build Docker Image') {
+      
+stage('3. Build Docker Image') {
     steps {
         script {
             env.IMAGE_NAME = 'ninande/my-web-app-new-mon'
-            env.IMAGE_TAG = "${env.BUILD_NUMBER}"
+            env.IMAGE_TAG = env.BUILD_NUMBER
+
+            if (!env.IMAGE_TAG || env.IMAGE_TAG == 'null') {
+                error('IMAGE_TAG is empty. Check Jenkins BUILD_NUMBER.')
+            }
 
             echo "Building Docker Image: ${env.IMAGE_NAME}:${env.IMAGE_TAG}"
 
             sh """
                 set -eu
-
                 docker build \
                   -t ${env.IMAGE_NAME}:${env.IMAGE_TAG} \
                   -t ${env.IMAGE_NAME}:latest \
@@ -93,33 +97,42 @@ pipeline {
     }
 }
 
+
         // STAGE 4: PUSH IMAGE TO DOCKER HUB
 
-        stage('4. Push to Docker Hub') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: "${DOCKERHUB_CREDENTIALS}",
-                        usernameVariable: 'DH_USER',
-                        passwordVariable: 'DH_TOKEN'
-                    )
-                ]) {
-                    sh '''
-                        set -eu
-                        set +x
+       
+stage('4. Push to Docker Hub') {
+    steps {
+        script {
+            if (!env.IMAGE_NAME || !env.IMAGE_TAG || env.IMAGE_TAG == 'null') {
+                error('Docker image name or tag is missing.')
+            }
 
-                        echo "$DH_TOKEN" | docker login \
-                            --username "$DH_USER" \
-                            --password-stdin
+            echo "Pushing ${env.IMAGE_NAME}:${env.IMAGE_TAG}"
 
-                        docker push "${IMAGE_NAME}:${IMAGE_TAG}"
-                        docker push "${IMAGE_NAME}:latest"
+            withCredentials([
+                usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DH_USER',
+                    passwordVariable: 'DH_TOKEN'
+                )
+            ]) {
+                sh """
+                    set -eu
 
-                        docker logout || true
-                    '''
-                }
+                    echo "\$DH_TOKEN" | docker login \
+                      -u "\$DH_USER" --password-stdin
+
+                    docker push ${env.IMAGE_NAME}:${env.IMAGE_TAG}
+                    docker push ${env.IMAGE_NAME}:latest
+
+                    docker logout
+                """
             }
         }
+    }
+}
+
 
         // STAGE 5: VERIFY ANSIBLE CONNECTIVITY
 
@@ -198,11 +211,9 @@ pipeline {
                             -o UserKnownHostsFile="$KNOWN_HOSTS_FILE" \
                             "${ANSIBLE_USER}@${ANSIBLE_HOST}" \
                             "cd '${ANSIBLE_DIR}' &&
-                             ansible-playbook \
-                             -i inventory.ini \
-                             deploy.yml \
-                             -e 'image_name=${IMAGE_NAME}' \
-                             -e 'image_tag=${IMAGE_TAG}'"
+                            ansible-playbook -i inventory.ini deploy.yml \
+                              -e image_name=${env.IMAGE_NAME} \
+                              -e image_tag=${env.IMAGE_TAG}
 
                         echo "Deployment completed"
                     '''
