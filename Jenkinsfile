@@ -180,44 +180,41 @@ stage('4. Push to Docker Hub') {
 
         // STAGE 6: DEPLOY TO TWO APP SERVERS AND NGINX LB
 
-        stage('6. Deploy using Ansible') {
-            steps {
-                withCredentials([
-                    sshUserPrivateKey(
-                        credentialsId: 'ansible-control-ssh-key',
-                        keyFileVariable: 'ANSIBLE_KEY'
-                    ),
-                    file(
-                        credentialsId: 'ansible-known-hosts',
-                        variable: 'KNOWN_HOSTS_FILE'
-                    )
-                ]) {
-                    sh '''
-                        set -eu
+      
+stage('6. Deploy using Ansible') {
+    steps {
+        withCredentials([
+            sshUserPrivateKey(
+                credentialsId: 'ansible-control-ssh-key',
+                keyFileVariable: 'ANSIBLE_KEY'
+            ),
+            file(
+                credentialsId: 'ansible-known-hosts',
+                variable: 'KNOWN_HOSTS_FILE'
+            )
+        ]) {
+            sh '''
+                set -eu
 
-                        SSH_OPTS="-o BatchMode=yes \
-                        -o IdentitiesOnly=yes \
-                        -o StrictHostKeyChecking=yes \
-                        -o ConnectTimeout=10"
+                : "${IMAGE_NAME:?IMAGE_NAME is missing}"
+                : "${IMAGE_TAG:?IMAGE_TAG is missing}"
 
-                        echo "Starting Ansible deployment"
+                echo "Starting Ansible deployment"
+                echo "Docker Image: ${IMAGE_NAME}:${IMAGE_TAG}"
 
-                        echo "Docker Image: ${IMAGE_NAME}:${IMAGE_TAG}"
-
-                        ssh $SSH_OPTS \
-                            -i "$ANSIBLE_KEY" \
-                            -o UserKnownHostsFile="$KNOWN_HOSTS_FILE" \
-                            "${ANSIBLE_USER}@${ANSIBLE_HOST}" \
-                            "cd '${ANSIBLE_DIR}' &&
-                            ansible-playbook -i inventory.ini deploy.yml \
-                              -e image_name=${env.IMAGE_NAME} \
-                              -e image_tag=${env.IMAGE_TAG}
-
-                        echo "Deployment completed"
-                    '''
-                }
-            }
+                ssh \
+                  -o BatchMode=yes \
+                  -o IdentitiesOnly=yes \
+                  -o StrictHostKeyChecking=yes \
+                  -o ConnectTimeout=10 \
+                  -i "$ANSIBLE_KEY" \
+                  -o UserKnownHostsFile="$KNOWN_HOSTS_FILE" \
+                  ansadmin@10.0.11.194 \
+                  "cd /opt/monitoring/my-web-app && ansible-playbook -i inventory.ini deploy.yml -e 'image_name=${IMAGE_NAME}' -e 'image_tag=${IMAGE_TAG}'"
+            '''
         }
+    }
+}
 
         // STAGE 7: VERIFY DEPLOYMENT
 
