@@ -1,13 +1,68 @@
-<!DOCTYPE html>
+
 <!DOCTYPE html>
 <html>
 <head>
     <title>My DevOps Project</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            padding: 50px;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 650px;
+            margin: auto;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+        }
+
+        .server {
+            color: #008000;
+            font-size: 24px;
+            font-weight: bold;
+        }
+    </style>
 </head>
+
 <body>
-    <h1>Welcome to My DevOps Project!</h1>
-    <p>This is my first HTML web page to test end-to-end CI/CD pipeline.</p>
-    <p>Deployed using Jenkins, SonarQube, Trivy, Docker Compose, Ansible, AWS EC2/ECR.</p>
-    <p>Created By Shrikant Deshmukh</p>
+    <div class="container">
+        <h1>Welcome to My DevOps Project!</h1>
+
+        <p>This HTML web page is used to test Infrastructure automation with monitoring.</p>
+
+        <p>
+            Deployed using Jenkins, Trivy, Docker, Ansible,
+            AWS EC2 and Nginx Load Balancer.
+        </p>
+
+        <h2>Application Server Information</h2>
+
+        <p>Request handled by application server:</p>
+
+        <p class="server" id="serverIP">Detecting server...</p>
+
+        <p>Created By Shrikant Deshmukh</p>
+    </div>
+
+    <script>
+        fetch(window.location.href, { cache: "no-store" })
+            .then(response => {
+                const serverIP = response.headers.get("X-Backend-Server");
+                document.getElementById("serverIP").textContent =
+                    serverIP || "Backend IP not available";
+            })
+            .catch(() => {
+                document.getElementById("serverIP").textContent =
+                    "Unable to detect application server";
+            });
+    </script>
 </body>
 </html>
