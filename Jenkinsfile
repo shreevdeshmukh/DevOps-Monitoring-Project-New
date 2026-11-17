@@ -27,7 +27,6 @@ pipeline {
         NOTIFY_EMAIL = 'shreevdeshmukh@gmail.com'
 
         IMAGE_NAME = 'ninande/my-web-app-new-mon'
-        IMAGE_TAG = ''
     }
 
     stages {
@@ -74,17 +73,15 @@ pipeline {
         // STAGE 3: BUILD DOCKER IMAGE
 
       
+
 stage('3. Build Docker Image') {
     steps {
         script {
             env.IMAGE_NAME = 'ninande/my-web-app-new-mon'
-            env.IMAGE_TAG = env.BUILD_NUMBER
+            env.IMAGE_TAG = currentBuild.number.toString()
 
-            if (!env.IMAGE_TAG || env.IMAGE_TAG == 'null') {
-                error('IMAGE_TAG is empty. Check Jenkins BUILD_NUMBER.')
-            }
-
-            echo "Building Docker Image: ${env.IMAGE_NAME}:${env.IMAGE_TAG}"
+            echo "Jenkins Build Number: ${currentBuild.number}"
+            echo "Docker Image: ${env.IMAGE_NAME}:${env.IMAGE_TAG}"
 
             sh """
                 set -eu
@@ -96,6 +93,7 @@ stage('3. Build Docker Image') {
         }
     }
 }
+
 
 
         // STAGE 4: PUSH IMAGE TO DOCKER HUB
