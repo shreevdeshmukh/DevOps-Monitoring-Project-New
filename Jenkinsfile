@@ -26,7 +26,7 @@ pipeline {
 
         NOTIFY_EMAIL = 'shreevdeshmukh@gmail.com'
 
-        IMAGE_NAME = ''
+        IMAGE_NAME = 'ninande/my-web-app-new-mon'
         IMAGE_TAG = ''
     }
 
