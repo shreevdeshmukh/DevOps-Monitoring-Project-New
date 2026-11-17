@@ -217,8 +217,7 @@ stage('6. Deploy using Ansible') {
 }
 
         // STAGE 7: VERIFY DEPLOYMENT
-
-       
+      
 stage('7. Verify Deployment') {
     steps {
         withCredentials([
@@ -259,8 +258,7 @@ stage('7. Verify Deployment') {
     }
 }
 
-
-    // POST BUILD ACTIONS
+   // POST BUILD ACTIONS
 
     post {
 
