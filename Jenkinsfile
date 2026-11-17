@@ -218,6 +218,7 @@ stage('6. Deploy using Ansible') {
 
         // STAGE 7: VERIFY DEPLOYMENT
       
+
 stage('7. Verify Deployment') {
     steps {
         withCredentials([
@@ -233,30 +234,23 @@ stage('7. Verify Deployment') {
             sh '''
                 set -eu
 
+                echo "Verifying Nginx and application containers"
+
                 ssh \
                   -o BatchMode=yes \
                   -o IdentitiesOnly=yes \
                   -o StrictHostKeyChecking=yes \
                   -i "$ANSIBLE_KEY" \
                   -o UserKnownHostsFile="$KNOWN_HOSTS_FILE" \
-                  ansadmin@10.0.11.194 'bash -s' <<REMOTE_SCRIPT
-
-                set -eu
-                cd /opt/monitoring/my-web-app
-
-                echo "Checking Nginx service"
-                ansible load_balancer -i inventory.ini \
-                  -b -m shell -a "systemctl is-active nginx"
-
-                echo "Checking application containers"
-                ansible app_servers -i inventory.ini \
-                  -b -m shell -a "docker ps"
-
-                REMOTE_SCRIPT
+                  ansadmin@10.0.11.194 \
+                  "cd /opt/monitoring/my-web-app && \
+                   ansible load_balancer -i inventory.ini -b -m shell -a 'systemctl is-active nginx' && \
+                   ansible app_servers -i inventory.ini -b -m shell -a 'docker ps'"
             '''
         }
     }
 }
+
 }
    // POST BUILD ACTIONS
 
