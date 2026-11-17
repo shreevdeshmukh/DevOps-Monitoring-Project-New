@@ -218,43 +218,47 @@ stage('6. Deploy using Ansible') {
 
         // STAGE 7: VERIFY DEPLOYMENT
 
-        stage('7. Verify Deployment') {
-            steps {
-                withCredentials([
-                    sshUserPrivateKey(
-                        credentialsId: 'ansible-control-ssh-key',
-                        keyFileVariable: 'ANSIBLE_KEY'
-                    ),
-                    file(
-                        credentialsId: 'ansible-known-hosts',
-                        variable: 'KNOWN_HOSTS_FILE'
-                    )
-                ]) {
-                    sh '''
-                        set -eu
+       
+stage('7. Verify Deployment') {
+    steps {
+        withCredentials([
+            sshUserPrivateKey(
+                credentialsId: 'ansible-control-ssh-key',
+                keyFileVariable: 'ANSIBLE_KEY'
+            ),
+            file(
+                credentialsId: 'ansible-known-hosts',
+                variable: 'KNOWN_HOSTS_FILE'
+            )
+        ]) {
+            sh '''
+                set -eu
 
-                        SSH_OPTS="-o BatchMode=yes \
-                        -o IdentitiesOnly=yes \
-                        -o StrictHostKeyChecking=yes"
+                ssh \
+                  -o BatchMode=yes \
+                  -o IdentitiesOnly=yes \
+                  -o StrictHostKeyChecking=yes \
+                  -i "$ANSIBLE_KEY" \
+                  -o UserKnownHostsFile="$KNOWN_HOSTS_FILE" \
+                  ansadmin@10.0.11.194 'bash -s' <<REMOTE_SCRIPT
 
-                        echo "Verifying application deployment"
+                set -eu
+                cd /opt/monitoring/my-web-app
 
-                        ssh $SSH_OPTS \
-                            -i "$ANSIBLE_KEY" \
-                            -o UserKnownHostsFile="$KNOWN_HOSTS_FILE" \
-                            "${ANSIBLE_USER}@${ANSIBLE_HOST}" \
-                            "cd '${ANSIBLE_DIR}' &&
-                             ansible load_balancer -i inventory.ini \
-                             -m shell -a 'systemctl is-active nginx' &&
-                             ansible app_servers -i inventory.ini \
-                             -m shell -a 'docker ps'"
+                echo "Checking Nginx service"
+                ansible load_balancer -i inventory.ini \
+                  -b -m shell -a "systemctl is-active nginx"
 
-                        echo "Deployment verification completed"
-                    '''
-                }
-            }
+                echo "Checking application containers"
+                ansible app_servers -i inventory.ini \
+                  -b -m shell -a "docker ps"
+
+                REMOTE_SCRIPT
+            '''
         }
     }
+}
+
 
     // POST BUILD ACTIONS
 
